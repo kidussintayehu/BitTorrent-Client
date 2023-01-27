@@ -1,7 +1,7 @@
 package torrentfile
 
 import (
-	"io"
+	"os"
 
 	"github.com/jackpal/bencode-go"
 )
@@ -29,11 +29,15 @@ type bencodeTorrent struct {
 }
 
 // Open parses a torrent file
-func Open(r io.Reader) (*bencodeTorrent, error) {
-	bto := bencodeTorrent{}
-	err := bencode.Unmarshal(r, &bto)
+func Open(path string) (TorrentFile, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return TorrentFile{}, err
 	}
-	return &bto, nil
+	defer file.Close()
+
+	bto := bencodeTorrent{}
+	err = bencode.Unmarshal(file, &bto)
+	return TorrentFile{}, err
+
 }
