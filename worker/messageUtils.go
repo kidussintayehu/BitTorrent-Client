@@ -17,21 +17,21 @@ func (w *Worker) SendRequest(index, begin, length int) error {
 
 // SendInterested sends an Interested message to the peer
 func (w *Worker) SendInterested() error {
-	msg := message.Message{ID: message.Interested}
+	msg := message.Message{ID: message.MsgInterested}
 	_, err := w.Conn.Write(msg.Serialize())
 	return err
 }
 
 // SendNotInterested sends a NotInterested message to the peer
 func (w *Worker) SendNotInterested() error {
-	msg := message.Message{ID: message.NotInterested}
+	msg := message.Message{ID: message.MsgNotInterested}
 	_, err := w.Conn.Write(msg.Serialize())
 	return err
 }
 
 // SendUnchoke sends an Unchoke message to the peer
 func (w *Worker) SendUnchoke() error {
-	msg := message.Message{ID: message.Unchoke}
+	msg := message.Message{ID: message.MsgUnchoke}
 	_, err := w.Conn.Write(msg.Serialize())
 	return err
 }

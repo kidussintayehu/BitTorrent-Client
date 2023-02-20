@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/kidussintayehu/BitTorrent-Client/bitfield"
-	"github.com/kidussintayehu/BitTorrent-Client/handshake"
+	"github.com/kidussintayehu/BitTorrent-Client/bitfield_torrent"
+	"github.com/kidussintayehu/BitTorrent-Client/handshake_with_pear"
 	"github.com/kidussintayehu/BitTorrent-Client/message"
 	"github.com/kidussintayehu/BitTorrent-Client/peers"
 )
@@ -62,7 +62,7 @@ func recvBitfield(conn net.Conn) (bitfield.Bitfield, error) {
 		err := fmt.Errorf("Expected bitfield but got %s", msg)
 		return nil, err
 	}
-	if msg.ID != message.Bitfield {
+	if msg.ID != message.MsgBitfield {
 		err := fmt.Errorf("Expected bitfield but got ID %d", msg.ID)
 		return nil, err
 	}

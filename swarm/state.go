@@ -12,7 +12,7 @@ type progressTracker struct {
 	buf        []byte
 	downloaded int
 	requested  int
-	backlog    int // keeps track of number of blocks left to process
+	backlog    int 
 }
 
 func (state *progressTracker) readMessage() error {
@@ -25,23 +25,22 @@ func (state *progressTracker) readMessage() error {
 	}
 
 	switch msg.ID {
-	case message.Unchoke:
+	case message.MsgUnchoke:
 		state.worker.Choked = false
-	case message.Choke:
+	case message.MsgChoke:
 		state.worker.Choked = true
-	case message.Have:
+	case message.MsgHave:
 		index, err := message.ParseHave(msg)
 		if err != nil {
 			return err
 		}
 		state.worker.Bitfield.SetPiece(index)
-	case message.Piece:
-		n, err := message.ParsePiece(state.index, state.buf, msg)
-		if err != nil {
-			return err
-		}
+	case message.MsgPiece:
+		n := message.ParsePiece(state.index, state.buf, msg)
+		
 		state.downloaded += n
 		state.backlog--
 	}
 	return nil
 }
+

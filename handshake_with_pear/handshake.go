@@ -5,23 +5,7 @@ import (
 	"io"
 )
 
-// A Handshake is a special message that a peer uses to identify itself
-type Handshake struct {
-	Pstr     string
-	InfoHash [20]byte
-	PeerID   [20]byte
-}
 
-// New creates a new handshake with the standard pstr
-func New(infoHash, peerID [20]byte) *Handshake {
-	return &Handshake{
-		Pstr:     "BitTorrent protocol", // always this string
-		InfoHash: infoHash,              // file identifier
-		PeerID:   peerID,                // the random peerID we made
-	}
-}
-
-// Serialize serializes the handshake to a buffer
 func (h *Handshake) Serialize() []byte {
 	buf := make([]byte, len(h.Pstr)+49)
 	buf[0] = byte(len(h.Pstr))
@@ -32,6 +16,16 @@ func (h *Handshake) Serialize() []byte {
 	curr += copy(buf[curr:], h.PeerID[:])
 	return buf
 }
+
+func New(infoHash, peerID [20]byte) *Handshake {
+	return &Handshake{
+		Pstr:     "BitTorrent protocol", 
+		InfoHash: infoHash,             
+		PeerID:   peerID,                
+	}
+}
+
+
 
 // Read parses a handshake from a stream
 func Read(r io.Reader) (*Handshake, error) {
@@ -47,7 +41,7 @@ func Read(r io.Reader) (*Handshake, error) {
 		return nil, err
 	}
 
-	handshakeBuf := make([]byte, 48+pstrlen) // 48 since we already read length
+	handshakeBuf := make([]byte, 48+pstrlen) 
 	_, err = io.ReadFull(r, handshakeBuf)
 	if err != nil {
 		return nil, err
@@ -65,4 +59,11 @@ func Read(r io.Reader) (*Handshake, error) {
 	}
 
 	return &h, nil
+}
+
+
+type Handshake struct {
+	Pstr     string
+	InfoHash [20]byte
+	PeerID   [20]byte
 }
