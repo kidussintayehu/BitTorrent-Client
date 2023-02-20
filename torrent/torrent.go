@@ -7,15 +7,26 @@ import (
 
 	"github.com/kidussintayehu/BitTorrent-Client/utilities"
 	"github.com/kidussintayehu/BitTorrent-Client/swarm"
+	"github.com/kidussintayehu/BitTorrent-Client/bitfield_torrent"
 )
 
+type Torrent struct {
+	Announce    string
+	InfoHash    [20]byte
+	PieceHashes [][20]byte
+	PieceLength int
+	Length      int
+	Name        string
+	File        *os.File
+	Bitfield    bitfield.Bitfield
+}
 // TorrentFile holds the metadata from a .torrent file, parsed from bencode
 type TorrentFile struct {
 	TrackerBaseURL string
-	InfoHash       [20]byte   // trakcer uses to identify file
-	PieceHashes    [][20]byte // integrity check of pieces
-	PieceLength    int        // size of each piece
-	Length         int        // size of file
+	InfoHash       [20]byte   
+	PieceHashes    [][20]byte 
+	PieceLength    int       
+	Length         int        
 	Name           string
 }
 
@@ -47,6 +58,7 @@ func Deserialize(path string) (TorrentFile, error) {
 		return TorrentFile{}, err
 	}
 
+	
 	// store in flatter struct for ease of use
 	t := TorrentFile{
 		TrackerBaseURL: torrentMeta.Announce,

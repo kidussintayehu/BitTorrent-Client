@@ -2,8 +2,9 @@ package swarm
 
 import (
 	"log"
-	"runtime"
-
+	"bytes"
+	"crypto/sha1"
+	"github.com/kidussintayehu/BitTorrent-Client/worker"
 	"github.com/kidussintayehu/BitTorrent-Client/peers"
 )
 
@@ -31,37 +32,69 @@ type pieceOfResult struct {
 func (meta *DownloadMeta) Download() ([]byte, error) {
 	log.Println("Downloading", meta.Name)
 
-	// stores info on remaining pieces to download
 	workQueue := make(chan *pieceOfWork, len(meta.PieceHashes))
-	// stores downloaded data
 	results := make(chan *pieceOfResult)
 
 	for index, hash := range meta.PieceHashes {
-		length := meta.calculatePieceSize(index)
-		workQueue <- &pieceOfWork{index, hash, length}
+		begin := index * meta.PieceSize
+		end := begin + meta.PieceSize
+		if end > meta.FileSize {
+			end = meta.FileSize
+		}
+		workQueue <- &pieceOfWork{index, hash, end-begin}
 	}
 
-	log.Println("Starting download workers")
-
-	// start goroutine workers, one for each peer
-	// orchestration is simplified by using common channels to communicate
 	for _, peer := range meta.Peers {
 		go meta.startDownloadWorker(peer, workQueue, results)
 	}
 
-	// store result in memory -> maybe better to save peices to disk for big files
 	resultBuf := make([]byte, meta.FileSize)
 	donePieces := 0
 	for donePieces < len(meta.PieceHashes) {
 		piece := <-results
-		begin, end := meta.calculateBoundsForPiece(piece.index)
+		begin := piece.index * meta.PieceSize
+		end := begin + meta.PieceSize
+		if end > meta.FileSize {
+			end = meta.FileSize
+		}
 		copy(resultBuf[begin:end], piece.buf)
 
-		percentComplete := float64(donePieces) / float64(len(meta.PieceHashes)) * 100
-		numWorkers := runtime.NumGoroutine() - 1 // subtract 1 for main thread
-		log.Printf("(%0.2f%% done) Downloaded piece #%d, %d peers online\n", percentComplete, piece.index, numWorkers)
 		donePieces++
 	}
 	close(workQueue)
 	return resultBuf, nil
+}
+
+func (meta *DownloadMeta) startDownloadWorker(peer peers.Peer, workQueue chan *pieceOfWork, results chan *pieceOfResult) {
+	w, err := worker.New(peer, meta.PeerID, meta.InfoHash)
+	if err != nil {
+		log.Printf("Handshake with peer %s failed\n", peer.IP)
+		return
+	}
+	log.Printf("Handshake with peer %s successful\n", peer.IP)
+
+	defer w.Conn.Close()
+
+	w.SendUnchoke()
+	w.SendInterested()
+
+	for piece := range workQueue {
+		if !w.Bitfield.HasPiece(piece.index) {
+			workQueue <- piece
+			continue
+		}
+
+		buf := attemptDownload(w, piece)
+
+
+		hash := sha1.Sum(buf)
+ 		if !bytes.Equal(hash[:], piece.hash[:]) {
+			log.Printf("Piece #%d from %s failed integrity check, will retry\n", piece.index, peer.IP)
+			workQueue <- piece
+			continue
+		}
+
+		w.SendHave(piece.index)
+		results <- &pieceOfResult{piece.index, buf}
+	}
 }

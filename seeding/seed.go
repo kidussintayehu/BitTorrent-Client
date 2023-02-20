@@ -8,10 +8,13 @@ import (
 	"log"
 	"net"
 	"os"
-	"torrent/handshake"
-	"torrent/message"
-	"torrent/torrentfile"
+	"github.com/kidussintayehu/BitTorrent-Client/handshake_with_pear"
+	"github.com/kidussintayehu/BitTorrent-Client/message"
+	"github.com/kidussintayehu/BitTorrent-Client/torrent"
 )
+
+
+
 
 type Request struct {
 	Index      int
@@ -49,6 +52,7 @@ func readMessage(r io.Reader) (*message.Message, error) {
 	return &m, nil
 }
 
+
 func SendUnchoke(conn net.Conn) error {
 	msg := message.Message{ID: message.MsgUnchoke}
 	_, err := conn.Write(msg.Serialize())
@@ -56,7 +60,7 @@ func SendUnchoke(conn net.Conn) error {
 }
 
 // Some Remaining shit todo here
-func parseRequest(torrent *torrentfile.Torrent, msg *message.Message) (*Request, error) {
+func parseRequest(torrent *torrent.Torrent, msg *message.Message) (*Request, error) {
 	if msg.ID != message.MsgRequest {
 		return nil, fmt.Errorf("Expected REQUEST (ID %d), got ID %d", message.MsgRequest, msg.ID)
 	}
@@ -96,7 +100,7 @@ func FormatPiece(request *Request, data []byte) *message.Message {
 	return &message.Message{ID: message.MsgPiece, Payload: payload}
 }
 
-func Upload(torrent *torrentfile.Torrent, msg *message.Message, conn net.Conn) error {
+func Upload(torrent *torrent.Torrent, msg *message.Message, conn net.Conn) error {
 	request, err := parseRequest(torrent, msg)
 	if err != nil {
 		return err
@@ -121,7 +125,7 @@ func Upload(torrent *torrentfile.Torrent, msg *message.Message, conn net.Conn) e
 	return nil
 }
 
-func handleConnection(torrent *torrentfile.Torrent, conn net.Conn) {
+func handleConnection(torrent *torrent.Torrent, conn net.Conn) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	res, err := handshake.Read(reader)
@@ -133,18 +137,8 @@ func handleConnection(torrent *torrentfile.Torrent, conn net.Conn) {
 	Payload := torrent.Bitfield
 	bitField := message.Message{ID: message.MsgBitfield, Payload: Payload}
 	conn.Write(bitField.Serialize())
-	_, err = readMessage(reader)
-	if err != nil {
 
-		return
-	}
-
-	_, err = readMessage(reader)
-	if err != nil {
-		return
-	}
-
-	// maybe add a checker if the number of goroutines hasn't been overloaded
+	//maybe add a checker if the number of goroutines hasn't been overloaded
 	error := SendUnchoke(conn)
 
 	if error != nil {
@@ -161,7 +155,7 @@ func handleConnection(torrent *torrentfile.Torrent, conn net.Conn) {
 	}
 }
 
-func HandleSeed(torrent *torrentfile.Torrent, Port uint16) {
+func HandleSeed(torrent *torrent.Torrent, Port uint16) {
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", Port))
 
 	if err != nil {
