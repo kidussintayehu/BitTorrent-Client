@@ -109,3 +109,4 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 	}
 	return nil
 }
+
