@@ -3,6 +3,8 @@
 
 This is a BitTorrent client implementation in Go language. The client is capable of downloading and uploading files using the BitTorrent protocol.BitTorrent is a protocol for downloading and distributing files across the Internet. It is a peer-to-peer protocol because users of the BitTorrent network, known as peers, download data in parts from one another. Peers are introduced to one another by trackers, which are central servers.
 
+Seeder is a user that is seeding the file which means they allow other users to take bits of their data that has been fully downloaded in their computer. 
+
 ## Requirements
 
 - Go version 1.16 or later
