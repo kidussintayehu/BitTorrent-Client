@@ -7,14 +7,7 @@ import (
 	"strconv"
 )
 
-func decodeFromReader(r *bufio.Reader) (data interface{}, err error) {
-	result, err := unmarshal(r)
-	if err != nil {
-		return nil, err
-	}
 
-	return result, nil
-}
 
 func unmarshal(data *bufio.Reader) (interface{}, error) {
 	ch, err := data.ReadByte()
@@ -106,7 +99,15 @@ func unmarshal(data *bufio.Reader) (interface{}, error) {
 	}
 }
 
-// Reads bytes out of local buffer if possible, which avoids an extra copy.
+func decodeFromReader(r *bufio.Reader) (data interface{}, err error) {
+	result, err := unmarshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // The result []byte is only guarenteed to be valid until the next call to a Read method.
 func optimisticReadBytes(data *bufio.Reader, delim byte) ([]byte, error) {
 	buffered := data.Buffered()

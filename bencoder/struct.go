@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+
+
+var nobuilder *structBuilder
+
 type structBuilder struct {
 	val reflect.Value
 
@@ -16,8 +20,6 @@ type structBuilder struct {
 	map_ reflect.Value
 	key  reflect.Value
 }
-
-var nobuilder *structBuilder
 
 func isfloat(v reflect.Value) bool {
 	switch v.Kind() {
@@ -47,8 +49,7 @@ func setint(val reflect.Value, i int64) {
 	}
 }
 
-// If updating b.val is not enough to update the original,
-// copy a changed b.val out to the original.
+
 func (b *structBuilder) Flush() {
 	if b == nil {
 		return
@@ -219,8 +220,7 @@ func (b *structBuilder) Key(k string) builder {
 
 
 func Unmarshal(r io.Reader, val interface{}) (err error) {
-	// If e represents a value, the answer won't get back to the
-	// caller.  Make sure it's a pointer.
+	
 	if reflect.TypeOf(val).Kind() != reflect.Ptr {
 		err = errors.New("Attempt to unmarshal into a non-pointer")
 		return
@@ -232,7 +232,7 @@ func Unmarshal(r io.Reader, val interface{}) (err error) {
 func unmarshalValue(r io.Reader, v reflect.Value) (err error) {
 	var b *structBuilder
 
-	// XXX: Decide if the extra codnitions are needed. Affect map?
+	
 	if ptr := v; ptr.Kind() == reflect.Ptr {
 		if slice := ptr.Elem(); slice.Kind() == reflect.Slice || slice.Kind() == reflect.Int || slice.Kind() == reflect.String {
 			b = &structBuilder{val: slice}
@@ -345,7 +345,6 @@ func bencodeKey(field reflect.StructField, sv *stringValue) (key string) {
 	key = field.Name
 	tag := field.Tag
 	if len(tag) > 0 {
-		// Backwards compatability
 		// If there's a bencode key/value entry in the tag, use it.
 		var tagOpt tagOptions
 		key, tagOpt = parseTag(tag.Get("bencode"))
@@ -368,11 +367,9 @@ func bencodeKey(field reflect.StructField, sv *stringValue) (key string) {
 	return
 }
 
-// tagOptions is the string following a comma in a struct field's "bencode"
 // tag, or the empty string. It does not include the leading comma.
 type tagOptions string
 
-// parseTag splits a struct field's bencode tag into its name and
 // comma-separated options.
 func parseTag(tag string) (string, tagOptions) {
 	if idx := strings.Index(tag, ","); idx != -1 {
@@ -381,9 +378,7 @@ func parseTag(tag string) (string, tagOptions) {
 	return tag, tagOptions("")
 }
 
-// Contains reports whether a comma-separated list of options
 // contains a particular substr flag. substr must be surrounded by a
-// string boundary or commas.
 func (o tagOptions) Contains(optionName string) bool {
 	if len(o) == 0 {
 		return false
@@ -417,8 +412,6 @@ func writeStruct(w io.Writer, val reflect.Value) (err error) {
 	for i := 0; i < numFields; i++ {
 		field := typ.Field(i)
 		bencodeKey(field, &svList[i])
-		// The tag `bencode:"-"` should mean that this field must be ignored
-		// See https://golang.org/pkg/encoding/json/#Marshal or https://golang.org/pkg/encoding/xml/#Marshal
 		// We set a zero value so that it is ignored by the writeSVList() function
 		if svList[i].key == "-" {
 			svList[i].value = reflect.Value{}

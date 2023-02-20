@@ -10,27 +10,29 @@ import (
 	"sync"
 )
 
-type builder interface {
-	// Set value
-	Int64(i int64)
-	Uint64(i uint64)
-	Float64(f float64)
-	String(s string)
-	Array()
-	Map()
-
-	// Create sub-Builders
-	Elem(i int) builder
-	Key(s string) builder
-
-	// Flush changes to parent builder if necessary.
-	Flush()
-}
 
 
 type Reader interface {
 	io.Reader
 	io.ByteScanner
+}
+
+// Like io.ReadAtLeast, but takes a bufio.Reader.
+func readAtLeast(r *bufio.Reader, buf []byte, min int) (n int, err error) {
+	if len(buf) < min {
+		return 0, io.ErrShortBuffer
+	}
+	for n < min && err == nil {
+		var nn int
+		nn, err = r.Read(buf[n:])
+		n += nn
+	}
+	if n >= min {
+		err = nil
+	} else if n > 0 && err == io.EOF {
+		err = io.ErrUnexpectedEOF
+	}
+	return
 }
 
 func decodeInt64(r *bufio.Reader, delim byte) (data int64, err error) {
@@ -82,28 +84,30 @@ func decodeString(r *bufio.Reader) (data string, err error) {
 	return
 }
 
+
+type builder interface {
+	// Set value
+	Int64(i int64)
+	Uint64(i uint64)
+	Float64(f float64)
+	String(s string)
+	Array()
+	Map()
+
+	// Create sub-Builders
+	Elem(i int) builder
+	Key(s string) builder
+
+	// Flush changes to parent builder if necessary.
+	Flush()
+}
+
 // Like io.ReadFull, but takes a bufio.Reader.
 func readFull(r *bufio.Reader, buf []byte) (n int, err error) {
 	return readAtLeast(r, buf, len(buf))
 }
 
-// Like io.ReadAtLeast, but takes a bufio.Reader.
-func readAtLeast(r *bufio.Reader, buf []byte, min int) (n int, err error) {
-	if len(buf) < min {
-		return 0, io.ErrShortBuffer
-	}
-	for n < min && err == nil {
-		var nn int
-		nn, err = r.Read(buf[n:])
-		n += nn
-	}
-	if n >= min {
-		err = nil
-	} else if n > 0 && err == io.EOF {
-		err = io.ErrUnexpectedEOF
-	}
-	return
-}
+
 
 func parseFromReader(r *bufio.Reader, build builder) (err error) {
 	c, err := r.ReadByte()
@@ -204,11 +208,9 @@ exit:
 	return
 }
 
-// Parse parses the bencode stream and makes calls to
 // the builder to construct a parsed representation.
 func parse(reader io.Reader, builder builder) (err error) {
 	// Check to see if the reader already fulfills the bufio.Reader interface.
-	// Wrap it in a bufio.Reader if it doesn't.
 	r, ok := reader.(*bufio.Reader)
 	if !ok {
 		r = newBufioReader(reader)
