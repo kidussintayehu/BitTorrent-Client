@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kidussintayehu/BitTorrent-Client/BitTobencodeUtils"
+	"github.com/kidussintayehu/BitTorrent-Client/bencodeUtils"
 	"github.com/kidussintayehu/BitTorrent-Client/peers"
 )
 
