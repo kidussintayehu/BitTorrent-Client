@@ -1,4 +1,4 @@
-module BitTorrent-Client
+module github.com/kidussintayehu/BitTorrent-Client
 
 go 1.15
 
