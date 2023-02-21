@@ -1,9 +1,10 @@
 package main
 
 import (
-	"BitTorrent-Client/torrent"
 	"log"
 	"os"
+
+	"github.com/kidussintayehu/BitTorrent-Client/torrent"
 )
 
 func main() {
