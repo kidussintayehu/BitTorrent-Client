@@ -4,7 +4,7 @@ import (
 	"log"
 	"runtime"
 
-	"BitTorrent-Client/peers"
+	"github.com/kidussintayehu/BitTorrent-Client/peers"
 )
 
 type DownloadMeta struct {

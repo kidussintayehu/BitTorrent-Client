@@ -1,8 +1,9 @@
 package swarm
 
 import (
-	"BitTorrent-Client/message"
-	"BitTorrent-Client/worker"
+
+	"github.com/kidussintayehu/BitTorrent-Client/message"
+	"github.com/kidussintayehu/BitTorrent-Client/worker"
 )
 
 type progressTracker struct {
