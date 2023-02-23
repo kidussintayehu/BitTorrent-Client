@@ -8,15 +8,7 @@ import (
 	"github.com/kidussintayehu/BitTorrent-Client/peers"
 )
 
-type DownloadMeta struct {
-	Peers       []peers.Peer
-	PeerID      [20]byte
-	InfoHash    [20]byte
-	PieceHashes [][20]byte
-	PieceSize   int
-	FileSize    int
-	Name        string
-}
+
 
 type pieceOfWork struct {
 	index  int
@@ -28,6 +20,18 @@ type pieceOfResult struct {
 	index int
 	buf   []byte
 }
+
+
+type DownloadMeta struct {
+	Peers       []peers.Peer
+	PeerID      [20]byte
+	InfoHash    [20]byte
+	PieceHashes [][20]byte
+	PieceSize   int
+	FileSize    int
+	Name        string
+}
+
 
 func (meta *DownloadMeta) Download() ([]byte, error) {
 	log.Println("Downloading", meta.Name)
