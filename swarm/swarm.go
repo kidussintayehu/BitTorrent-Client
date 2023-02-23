@@ -32,6 +32,39 @@ type DownloadMeta struct {
 	Name        string
 }
 
+func (meta *DownloadMeta) startDownloadWorker(peer peers.Peer, workQueue chan *pieceOfWork, results chan *pieceOfResult) {
+	w, err := worker.New(peer, meta.PeerID, meta.InfoHash)
+	if err != nil {
+		log.Printf("Handshake with peer %s failed\n", peer.IP)
+		return
+	}
+	log.Printf("Handshake with peer %s successful\n", peer.IP)
+
+	defer w.Conn.Close()
+
+	w.SendUnchoke()
+	w.SendInterested()
+
+	for piece := range workQueue {
+		if !w.Bitfield.HasPiece(piece.index) {
+			workQueue <- piece
+			continue
+		}
+
+		buf := attemptDownload(w, piece)
+
+
+		hash := sha1.Sum(buf)
+ 		if !bytes.Equal(hash[:], piece.hash[:]) {
+			log.Printf("Piece #%d from %s failed integrity check, will retry\n", piece.index, peer.IP)
+			workQueue <- piece
+			continue
+		}
+
+		w.SendHave(piece.index)
+		results <- &pieceOfResult{piece.index, buf}
+	}
+}
 
 func (meta *DownloadMeta) Download() ([]byte, error) {
 	log.Println("Downloading", meta.Name)
@@ -69,36 +102,3 @@ func (meta *DownloadMeta) Download() ([]byte, error) {
 	return resultBuf, nil
 }
 
-func (meta *DownloadMeta) startDownloadWorker(peer peers.Peer, workQueue chan *pieceOfWork, results chan *pieceOfResult) {
-	w, err := worker.New(peer, meta.PeerID, meta.InfoHash)
-	if err != nil {
-		log.Printf("Handshake with peer %s failed\n", peer.IP)
-		return
-	}
-	log.Printf("Handshake with peer %s successful\n", peer.IP)
-
-	defer w.Conn.Close()
-
-	w.SendUnchoke()
-	w.SendInterested()
-
-	for piece := range workQueue {
-		if !w.Bitfield.HasPiece(piece.index) {
-			workQueue <- piece
-			continue
-		}
-
-		buf := attemptDownload(w, piece)
-
-
-		hash := sha1.Sum(buf)
- 		if !bytes.Equal(hash[:], piece.hash[:]) {
-			log.Printf("Piece #%d from %s failed integrity check, will retry\n", piece.index, peer.IP)
-			workQueue <- piece
-			continue
-		}
-
-		w.SendHave(piece.index)
-		results <- &pieceOfResult{piece.index, buf}
-	}
-}
